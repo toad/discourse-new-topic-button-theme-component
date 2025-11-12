@@ -5,4 +5,5 @@ export default apiInitializer("1.15.0", (api) => {
   console.log("Running apiInitializer");
   api.renderInOutlet("after-topic-footer-main-buttons", CustomHeaderTopicButton);
   api.renderInOutlet("topic-above-post-stream", CustomHeaderTopicButton);
+  api.renderInOutlet("topic-title", CustomHeaderTopicButton);
 });
