@@ -14,6 +14,10 @@ upstream (which puts its own button **everywhere**!).
 It is possible that changes to the upstream version will eventually make this 
 fork obsolete.
 
+Note that this is based on the pinned version of the upstream plugin for 
+Discourse 3.5. I haven't tested it with 3.6 yet but it eliminates the warnings 
+about the widgets framework being removed etc.
+
 This was inspired by this previous fork:
 - https://github.com/rogercreagh/discourse-new-topic-button-mod
 
