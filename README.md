@@ -13,3 +13,7 @@ upstream (which puts its own button **everywhere**!).
 
 It is possible that changes to the upstream version will eventually make this 
 fork obsolete.
+
+This was inspired by this previous fork:
+- https://github.com/rogercreagh/discourse-new-topic-button-mod
+
