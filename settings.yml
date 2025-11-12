@@ -5,6 +5,6 @@ new_topic_button_text:
 new_topic_button_title:
   default: ""
 hide_default_button:
-  default: true
+  default: false
 show_to_anon:
   default: false
