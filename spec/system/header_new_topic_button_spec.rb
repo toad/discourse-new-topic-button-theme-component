@@ -1,11 +1,20 @@
 # frozen_string_literal: true
 
-RSpec.describe "New topic header button", type: :system do
+RSpec.describe "New topic header button" do
   let!(:theme) { upload_theme_component }
 
   fab!(:user) { Fabricate(:user, trust_level: TrustLevel[1]) }
   fab!(:category)
-  fab!(:category2) { Fabricate(:category) }
+  fab!(:category2, :category)
+  fab!(:tag)
+  fab!(:topic) { Fabricate(:topic, category: category) }
+  fab!(:topic_with_tags) { Fabricate(:topic, category: category, tags: [tag]) }
+  fab!(:post) { Fabricate(:post, user:, topic:) }
+  fab!(:post_with_tags) { Fabricate(:post, user:, topic: topic_with_tags) }
+
+  let(:mini_tag_chooser) { PageObjects::Components::SelectKit.new(".mini-tag-chooser") }
+  let(:topic_page) { PageObjects::Pages::Topic.new }
+  let(:composer) { PageObjects::Components::Composer.new }
 
   context "with logged in user" do
     before { sign_in(user) }
@@ -21,6 +30,21 @@ RSpec.describe "New topic header button", type: :system do
       find("#new-create-topic").click
 
       expect(page).to have_css(".category-input [data-category-id='#{category2.id}']")
+    end
+
+    it "should open the composer to the correct category when the header button is clicked from a topic page" do
+      topic_page.visit_topic(topic)
+      find("#new-create-topic").click
+
+      expect(composer.category_chooser).to have_selected_value(category.id)
+    end
+
+    it "should open the composer with the correct tags when the header button is clicked from a topic page with tags" do
+      SiteSetting.tagging_enabled = true
+      topic_page.visit_topic(topic_with_tags)
+      find("#new-create-topic").click
+
+      expect(mini_tag_chooser).to have_selected_name(tag.name)
     end
 
     context "when new_topic_button_text is empty" do
@@ -68,10 +92,10 @@ RSpec.describe "New topic header button", type: :system do
         category.save!
       end
 
-      it "can't open composer" do
+      it "can open composer" do
         visit("/c/#{category.slug}/#{category.id}")
 
-        expect(page).to have_css("#new-create-topic[disabled]")
+        expect(page).to have_css("#new-create-topic:not([disabled])")
       end
     end
   end

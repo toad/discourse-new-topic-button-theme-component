@@ -1,22 +1,19 @@
 import Component from "@glimmer/component";
-import { getOwner } from "@ember/application";
+import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
+import { getOwner } from "@ember/owner";
 import { service } from "@ember/service";
 import DButton from "discourse/components/d-button";
-import DButtonTooltip from "discourse/components/d-button-tooltip";
 import routeAction from "discourse/helpers/route-action";
 import Category from "discourse/models/category";
 import { i18n } from "discourse-i18n";
-import DTooltip from "float-kit/components/d-tooltip";
 
 export default class CustomHeaderTopicButton extends Component {
   @service composer;
   @service currentUser;
   @service router;
-  @service siteSettings;
 
-  canCreateTopic = this.currentUser?.can_create_topic;
-
+  @tracked
   topic = this.router.currentRouteName.includes("topic")
     ? getOwner(this).lookup("controller:topic")
     : null;
@@ -26,16 +23,20 @@ export default class CustomHeaderTopicButton extends Component {
   }
 
   get currentTag() {
-    if (this.router.currentRoute.attributes?.tag?.id) {
+    if (this.router.currentRoute.attributes?.tag?.name) {
       return [
-        this.router.currentRoute.attributes?.tag?.id,
+        this.router.currentRoute.attributes?.tag?.name,
         ...(this.router.currentRoute.attributes?.additionalTags ?? []),
       ]
         .filter(Boolean)
         .filter((t) => !["none", "all"].includes(t))
         .join(",");
     } else {
-      return this.topic?.model?.tags?.join(",");
+      // TODO(https://github.com/discourse/discourse/pull/36678): The string check can be
+      // removed using .discourse-compatibility once the PR is merged.
+      return this.topic?.model?.tags
+        ?.map((t) => (typeof t === "string" ? t : t.name))
+        .join(",");
     }
   }
 
@@ -46,29 +47,6 @@ export default class CustomHeaderTopicButton extends Component {
         ? Category.findById(this.topic?.model?.category_id)
         : null)
     );
-  }
-
-  get canCreateTopicWithTag() {
-    return (
-      !this.router.currentRoute.attributes?.tag?.staff ||
-      this.currentUser?.staff
-    );
-  }
-
-  get canCreateTopicWithCategory() {
-    return !this.currentCategory || this.currentCategory?.permission;
-  }
-
-  get createTopicDisabled() {
-    if (this.userHasDraft) {
-      return false;
-    } else {
-      return (
-        !this.canCreateTopic ||
-        !this.canCreateTopicWithCategory ||
-        !this.canCreateTopicWithTag
-      );
-    }
   }
 
   get createTopicLabel() {
@@ -85,10 +63,6 @@ export default class CustomHeaderTopicButton extends Component {
     }
   }
 
-  get showDisabledTooltip() {
-    return this.createTopicDisabled && !this.currentCategory?.read_only_banner;
-  }
-
   @action
   createTopic() {
     this.composer.openNewTopic({
@@ -100,27 +74,14 @@ export default class CustomHeaderTopicButton extends Component {
 
   <template>
     {{#if this.currentUser}}
-      <DButtonTooltip>
-        <:button>
-          <DButton
-            @action={{this.createTopic}}
-            @translatedLabel={{this.createTopicLabel}}
-            @translatedTitle={{this.createTopicTitle}}
-            @icon={{settings.new_topic_button_icon}}
-            id="new-create-topic"
-            class="btn-default header-create-topic"
-            disabled={{this.createTopicDisabled}}
-          />
-        </:button>
-        <:tooltip>
-          {{#if this.showDisabledTooltip}}
-            <DTooltip
-              @icon="circle-info"
-              @content={{i18n (themePrefix "button_disabled_tooltip")}}
-            />
-          {{/if}}
-        </:tooltip>
-      </DButtonTooltip>
+      <DButton
+        @action={{this.createTopic}}
+        @translatedLabel={{this.createTopicLabel}}
+        @translatedTitle={{this.createTopicTitle}}
+        @icon={{settings.new_topic_button_icon}}
+        id="new-create-topic"
+        class="btn-default header-create-topic"
+      />
     {{else if settings.show_to_anon}}
       <DButton
         @action={{routeAction "showLogin"}}
